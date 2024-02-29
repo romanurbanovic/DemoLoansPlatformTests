@@ -14,6 +14,24 @@ namespace DemoLoansPlatformTests
     {
         public static IWebDriver driver;
 
+        public static void FillActionsForm()
+        {
+            driver.FindElement(By.XPath("//div[contains(text(), 'Leads, New: Contacted')]")).Click();
+            driver.FindElement(By.XPath("//span[contains(text(), 'Request rejected')]")).Click();
+
+            driver.FindElement(By.XPath("//div[contains(text(), 'User020')]")).Click();
+            driver.FindElement(By.XPath("//div[contains(text(), 'Demo Account ")).Click();
+
+            driver.FindElement(By.XPath("//div[contains(text(), 'Low')]")).Click();
+            driver.FindElement(By.XPath("//div[contains(text(), 'High")).Click();
+
+            driver.FindElement(By.Id("DeadlineDate")).SendKeys("10102024");
+
+            driver.FindElement(By.Id("notes")).SendKeys("Smoke test");
+
+        }
+
+
         [OneTimeSetUp]
         public void Setup()
         {
@@ -37,16 +55,16 @@ namespace DemoLoansPlatformTests
         [OneTimeTearDown]
         public void TearDown()
         {
-
+//            driver.Quit();
         }
     }
     public class Tests : BaseTest
     {
 
         [Test]
-        public void SmokeTest()
+        public void DashBoardTest()
         {
-
+            // Opening DashBoard Menu
             driver.FindElement(By.XPath("//*[@id=\"appbody\"]/div[1]/ul/li[1]/a/i")).Click();
             
             // Creating List of Loan Origination windows
@@ -57,7 +75,7 @@ namespace DemoLoansPlatformTests
             {
                 Thread.Sleep(500);
                 window.Click();
-                Assert.IsFalse(driver.PageSource.Contains("500 Internal Server Error"), "Page is not opening correctly. Internal Server Error detected.");
+                Assert.IsFalse(driver.PageSource.Contains("ERROR: 500"), "Page is not opening correctly. Internal Server Error detected.");
                 driver.Navigate().Back();
             }
 
@@ -72,7 +90,7 @@ namespace DemoLoansPlatformTests
             {
                 Thread.Sleep(500);
                 window2.Click();
-                Assert.IsFalse(driver.PageSource.Contains("500 Internal Server Error"), "Page is not opening correctly. Internal Server Error detected.");
+                Assert.IsFalse(driver.PageSource.Contains("ERROR: 500"), "Page is not opening correctly. Internal Server Error detected.");
                 driver.Navigate().Back();
             }
 
@@ -87,15 +105,39 @@ namespace DemoLoansPlatformTests
             for (int i =1; i < 13; i++)
             {
                 Thread.Sleep(500);
-                IWebElement element = driver.FindElement(By.XPath("//*[@id=\"appbody\"]/div[1]/ul/li[" + i + "]/a/i"));
+                IWebElement element = driver.FindElement(By.XPath("//*[@id='appbody']/div[1]/ul/li[" + i + "]/a/i"));
                 
                 // Implementing JavaScriptExecuter to click non visible menu elements                
                 IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
                 js.ExecuteScript("arguments[0].click();", element);
-                Assert.IsFalse(driver.PageSource.Contains("500 Internal Server Error"), "Page is not opening correctly. Internal Server Error detected.");
+                Assert.IsFalse(driver.PageSource.Contains("ERROR: 500"), "Page is not opening correctly. Internal Server Error detected.");
             }
         }
 
+        [Test]
+        public void LoanApplicationTest()
+        {
+            // Selecting "Leads, New" tab
+            driver.FindElement(By.XPath("//*[@class='content']/div/div[1]")).Click();
+
+            // Checking Loans filters function
+            driver.FindElement(By.XPath("//button[@title='Loan Origination']")).Click();
+            driver.FindElement(By.XPath("//button[@title='All Users']")).Click();
+            driver.FindElement(By.XPath("//span[text()='All Users']")).Click();
+            driver.FindElement(By.XPath("//button[@title='Leads, New']")).Click();
+            driver.FindElement(By.XPath("//span[text()='Leads, New']")).Click();
+
+            // Checking functioning of "Actions" butons for the separate loan          
+            driver.FindElement(By.XPath("//a[contains(text(),'Contacted')]")).Click();
+            driver.FindElement(By.XPath("//button[contains(text(),'Submit')]")).Click(); 
+            driver.FindElement(By.XPath("//a[contains(text(),'Rejected')]")).Click();
+            driver.FindElement(By.XPath("//button[contains(text(),'Submit')]")).Click();
+            driver.FindElement(By.XPath("//a[@title='Actions...']")).Click();
+            FillActionsForm();
+            driver.FindElement(By.XPath("//button[contains(text(),'Submit')]")).Click();
+            driver.FindElement(By.XPath("//a[@title='Reassign...']")).Click();
+            driver.FindElement(By.Id("submitBtn")).Click();
+        }
 
     }
 }
