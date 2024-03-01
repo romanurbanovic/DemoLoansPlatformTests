@@ -20,7 +20,7 @@ namespace DemoLoansPlatformTests
             driver.FindElement(By.XPath("//span[contains(text(), 'Request rejected')]")).Click();
 
             driver.FindElement(By.XPath("//div[contains(text(), 'User020')]")).Click();
-            driver.FindElement(By.XPath("//div[contains(text(), 'Demo Account ")).Click();
+            driver.FindElement(By.Id("bs-select-5-2")).Click();
 
             driver.FindElement(By.XPath("//div[contains(text(), 'Low')]")).Click();
             driver.FindElement(By.XPath("//div[contains(text(), 'High")).Click();
