@@ -5,15 +5,64 @@ using System;
 using System.Threading;
 using System.Collections.Generic;
 using System.IO;
-using System.Diagnostics;
+using OpenQA.Selenium.Support.UI;
+using SeleniumExtras.WaitHelpers;
+
+
 
 namespace DemoLoansPlatformTests
 {
-    // Creating additional class to run SetUp and TearDown methods once for all tests
+    // Create additional class to run SetUp and TearDown methods once for all tests
     public class BaseTest
     {
         public static IWebDriver driver;
 
+        [OneTimeSetUp]
+        public void Setup()
+        {
+            // Launch ChromeDriver  
+            driver = new ChromeDriver("C:\\Users\\Asus\\Downloads\\chromedriver_win32\\chromedriver.exe");
+
+            // Maximize browser window
+            driver.Manage().Window.Maximize();
+
+            // Wait for window to maximize
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
+
+            // Go to the login page
+            driver.Navigate().GoToUrl("https://demo.loansplatform.com/lms/");
+
+         // Aquire login data from file to protect private data
+
+            // Create StreamReader object
+            StreamReader sr = new("C:\\Users\\Asus\\Desktop\\Lendstream_login_data.txt");
+
+            // Read separate lines from file and create variables "userName" and "password" to login
+            string userName = sr.ReadLine();
+            string password = sr.ReadLine();
+
+            // Input username
+            driver.FindElement(By.XPath("//input[@name='Username']")).SendKeys(userName);
+
+            // Input password
+            driver.FindElement(By.Id("Password")).SendKeys(password);
+
+            // Click "Login" button
+            driver.FindElement(By.Id("submit_button")).Click();
+
+            // Check current user is logged
+            Assert.AreEqual("Demo User300", driver.FindElement(By.Id("user_profile")).Text);
+        }
+
+        [OneTimeTearDown]
+        public void TearDown()
+        {
+//            driver.Quit();
+        }
+    }
+
+    public class TestMethods: BaseTest
+    {
         public static void FillActionsForm()
         {
             driver.FindElement(By.XPath("//div[contains(text(), 'Leads, New: Contacted')]")).Click();
@@ -28,115 +77,165 @@ namespace DemoLoansPlatformTests
             driver.FindElement(By.Id("DeadlineDate")).SendKeys("10102024");
 
             driver.FindElement(By.Id("notes")).SendKeys("Smoke test");
-
-        }
-
-
-        [OneTimeSetUp]
-        public void Setup()
-        {
-            // Launching ChromeDriver and loadin Login page  
-            driver = new ChromeDriver("C:\\Users\\Asus\\Downloads\\chromedriver_win32\\chromedriver.exe");
-            driver.Manage().Window.Maximize();
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-            driver.Navigate().GoToUrl("https://demo.loansplatform.com/lms/dashboard");
-
-            // Aquiring login data from file         
-            StreamReader sr = new("C:\\Users\\Asus\\Desktop\\Lendstream_login_data.txt");
-            String userName = sr.ReadLine();
-            String password = sr.ReadLine();
-
-            // Loging to the application
-            driver.FindElement(By.XPath("//input[@name='Username']")).SendKeys(userName);
-            driver.FindElement(By.Id("Password")).SendKeys(password);
-            driver.FindElement(By.Id("submit_button")).Click();
-        }
-
-        [OneTimeTearDown]
-        public void TearDown()
-        {
-//            driver.Quit();
         }
     }
-    public class Tests : BaseTest
+    public class Tests : TestMethods
     {
-
         [Test]
-        public void DashBoardTest()
+        public void DashboardWindowsOpeningTest()
         {
-            // Opening DashBoard Menu
+            // Open "Dashboard" section
             driver.FindElement(By.XPath("//*[@id=\"appbody\"]/div[1]/ul/li[1]/a/i")).Click();
             
-            // Creating List of Loan Origination windows
+            // Create a List of WebElements from "Loan Origination" section windows
             IList<IWebElement> loanOriginationList = driver.FindElements(By.XPath("//div[@title='Title']"));
 
-            // Iterating through the Loan Origination List and clicking each window
-            foreach (IWebElement window in loanOriginationList)
+            Assert.Multiple(() =>
             {
-                Thread.Sleep(500);
-                window.Click();
-                Assert.IsFalse(driver.PageSource.Contains("ERROR: 500"), "Page is not opening correctly. Internal Server Error detected.");
-                driver.Navigate().Back();
-            }
 
-            // Switching to Loan Origination tab
-            driver.FindElement(By.XPath("//a[contains(text(),'Loan Servicing')]")).Click();
+                // Iterate through the WebElements List of "Loan Origination" section windows
+                foreach (IWebElement window in loanOriginationList)
+                {
+                    // Wait for the element to be clickable
+                    WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                    wait.Until(ExpectedConditions.ElementToBeClickable(window));
 
-            // Creating List of Loan Servicing windows
-            IList<IWebElement> loanServisingList = driver.FindElements(By.XPath("//div[@title='Title']"));
+                    // Open each element
+                    window.Click();
 
-            // Iterating through the Loan Origination List and clicking each window
-            foreach (IWebElement window2 in loanServisingList)
-            {
-                Thread.Sleep(500);
-                window2.Click();
-                Assert.IsFalse(driver.PageSource.Contains("ERROR: 500"), "Page is not opening correctly. Internal Server Error detected.");
-                driver.Navigate().Back();
-            }
+                    // Check element opens without "ERROR: 500"
+                    Assert.IsFalse(driver.PageSource.Contains("ERROR: 500"), "'Loan Origination' section element is not opening correctly. Internal Server Error detected.");
+
+                    // Return to the "Loan Origination" section
+                    driver.Navigate().Back();
+                }
+
+                // Switch to Loan Servicing section
+                driver.FindElement(By.XPath("//a[contains(text(),'Loan Servicing')]")).Click();
+
+                // Create a List of WebElements from "Loan Servicing" section windows
+                IList<IWebElement> loanServisingList = driver.FindElements(By.XPath("//div[@title='Title']"));
+
+                // Iterate through the WebElements List of "Loan Origination" section windows
+                foreach (IWebElement window in loanServisingList)
+                {
+                    // Wait for the element to be clickable
+                    WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                    wait.Until(ExpectedConditions.ElementToBeClickable(window));
+
+                    // Open each element
+                    window.Click();
+
+                    // Check element opens without "ERROR: 500"
+                    Assert.IsFalse(driver.PageSource.Contains("ERROR: 500"), "'Loan Servicing' section element is not opening correctly. Internal Server Error detected.");
+
+                    // Return to the "Loan Servicing" section
+                    driver.Navigate().Back();
+                }
+            });
 
             Assert.Pass();
         }
 
         [Test]
-        public void SideBarTest()
+        public void SideBarMenuElementsOpeningTest()
         {
+        // Check the sidebear menu items are openeing
 
-            // Iterating through SideBar menu items
+            // Iterating through sidebar menu clicking each item 
             for (int i =1; i < 13; i++)
             {
-                Thread.Sleep(500);
                 IWebElement element = driver.FindElement(By.XPath("//*[@id='appbody']/div[1]/ul/li[" + i + "]/a/i"));
                 
                 // Implementing JavaScriptExecuter to click non visible menu elements                
                 IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
                 js.ExecuteScript("arguments[0].click();", element);
-                Assert.IsFalse(driver.PageSource.Contains("ERROR: 500"), "Page is not opening correctly. Internal Server Error detected.");
+
+                // Cheking the correct opening of the page
+                Assert.IsFalse(driver.PageSource.Contains("ERROR: 500"), "Internal Server Error detected while openeing SideBar menu item");
             }
+
+        // Check sidebar menu toggle/collapse function
+
+            // Locate the sidebar menu element
+            IWebElement texsElementDashboard = driver.FindElement(By.XPath("//span[contains(text(), 'Dashboard')]"));
+
+            // Locate the sidebar toggle/collapse menu element
+            IWebElement sideBarToggleCollapseButton = driver.FindElement(By.ClassName("slider"));
+
+            // Click on the sidebar sideBarToggleCollapseButton to toggle menu
+            sideBarToggleCollapseButton.Click();
+
+            // Check if the sidebar menu is expanded by verifying visibility of "Dashboard" word in menu
+            bool isExpanded = texsElementDashboard.Displayed;
+
+            // Use multiple assertions block to prevent test stop after assertion failure
+            Assert.Multiple(() =>
+            {
+                // Assertion to check if the sidebar menu is expanded
+                Assert.IsTrue(isExpanded, "Sidebar menu should be expanded after clicking");
+
+                // Click on the sidebar sideBarToggleCollapseButton to collapse menu
+                sideBarToggleCollapseButton.Click();
+
+                // Wait for the sidebar menu to become collapsed
+                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                wait.Until(ExpectedConditions.InvisibilityOfElementLocated(By.XPath("//span[contains(text(), 'Dashboard')]")));
+
+                // Check if the sidebar menu is collapsed
+                bool isCollapsed = !texsElementDashboard.Displayed;
+
+                // Assertion to check if the sidebar menu is collapsed
+                Assert.IsTrue(isCollapsed, "Sidebar menu should be collapsed after clicking");
+
+            });
         }
 
         [Test]
         public void LoanApplicationTest()
         {
-            // Selecting "Leads, New" tab
-            driver.FindElement(By.XPath("//*[@class='content']/div/div[1]")).Click();
+            // Applications, Submitted, New" tab
+            driver.FindElement(By.XPath("//*[@class='content']/div/div[3]")).Click();
 
             // Checking Loans filters function
             driver.FindElement(By.XPath("//button[@title='Loan Origination']")).Click();
             driver.FindElement(By.XPath("//button[@title='All Users']")).Click();
             driver.FindElement(By.XPath("//span[text()='All Users']")).Click();
-            driver.FindElement(By.XPath("//button[@title='Leads, New']")).Click();
-            driver.FindElement(By.XPath("//span[text()='Leads, New']")).Click();
+            driver.FindElement(By.XPath("//button[@title='Applications, Submitted']")).Click();
+            driver.FindElement(By.XPath("//span[text()='Applications, Submitted']")).Click();
 
             // Checking functioning of "Actions" butons for the separate loan          
-            driver.FindElement(By.XPath("//a[contains(text(),'Contacted')]")).Click();
-            driver.FindElement(By.XPath("//button[contains(text(),'Submit')]")).Click(); 
-            driver.FindElement(By.XPath("//a[contains(text(),'Rejected')]")).Click();
-            driver.FindElement(By.XPath("//button[contains(text(),'Submit')]")).Click();
-            driver.FindElement(By.XPath("//a[@title='Actions...']")).Click();
-            FillActionsForm();
-            driver.FindElement(By.XPath("//button[contains(text(),'Submit')]")).Click();
+            driver.FindElement(By.XPath("//a[contains(text(),'Other')]")).Click();
+
+            // Implementing JavaScriptExecuter to click overlapped "close" button
+            IWebElement closeButton = driver.FindElement(By.XPath("//button[@class='close']"));
+            IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+            js.ExecuteScript("arguments[0].click();", closeButton);
+
+            driver.FindElement(By.XPath("//a[contains(text(),'App Ready')]")).Click();
+            IWebElement closeButton1 = driver.FindElement(By.XPath("//button[@class='close']"));
+            //IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+            js.ExecuteScript("arguments[0].click();", closeButton1);
+
+            driver.FindElement(By.XPath(" //div[contains(text(),'Correction Needed: Return for correction')]")).Click();
+            IWebElement closeButton2 = driver.FindElement(By.XPath("//button[@class='close']"));
+            IJavaScriptExecutor js2 = (IJavaScriptExecutor)driver;
+            js2.ExecuteScript("arguments[0].click();", closeButton2);
+
             driver.FindElement(By.XPath("//a[@title='Reassign...']")).Click();
-            driver.FindElement(By.Id("submitBtn")).Click();
+            IWebElement closeButton3 = driver.FindElement(By.XPath("//button[@class='close']"));
+            IJavaScriptExecutor js3 = (IJavaScriptExecutor)driver;
+            js3.ExecuteScript("arguments[0].click();", closeButton3);
+
+            driver.FindElement(By.XPath("//a[@title='Actions...']")).Click();
+            IWebElement closeButton4 = driver.FindElement(By.XPath("//button[@class='close']"));
+            IJavaScriptExecutor js4 = (IJavaScriptExecutor)driver;
+            js4.ExecuteScript("arguments[0].click();", closeButton4);
+
+            //FillActionsForm();
+            //driver.FindElement(By.XPath("//button[contains(text(),'Submit')]")).Click();
+            
+            //driver.FindElement(By.Id("submitBtn")).Click();
         }
 
     }
