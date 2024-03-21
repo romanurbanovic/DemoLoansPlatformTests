@@ -29,7 +29,7 @@ Before running the tests, ensure you have the following installed on your machin
 
 2. Write "Lendstream_login_data.txt" to your local mashine.
 
-3. Correct the "loginDataFileLocation" parameter in "Helper.cs" class to match Lendstream_login_data.txt file location on your mashine.
+3. Correct the "loginDataFileLocation" parameter in "Helper.cs" class to match "Lendstream_login_data.txt" file location on your mashine.
 
 4. Build the solution by selecting `Build > Build Solution` from the menu.
 
