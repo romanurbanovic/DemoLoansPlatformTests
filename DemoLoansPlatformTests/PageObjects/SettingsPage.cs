@@ -3,8 +3,9 @@ using System.Collections.Generic;
 
 namespace DemoLoansPlatformTests.PageObjects
 {
-    public class SettingsPageObject
+    public class SettingsPage
     {
+        public static readonly By settingsButton = By.CssSelector("#Settings");
         public static string settingsPageUrl = "https://demo.loansplatform.com/lms/settingspg";
 
         // One common method for all "Settings page" sections to check correct opening of section items
@@ -17,6 +18,7 @@ namespace DemoLoansPlatformTests.PageObjects
             // Iterate through the "Origination" section items
             for (int i = 1; i <= sectionItemsCount; i++)
             {
+                
                 // Locator for section item
                 By sectionItemName = By.XPath("//h2[text()='" + sectionName + "']/parent::div//following-sibling::ul/a[" + i + "]/li");
 
@@ -26,8 +28,20 @@ namespace DemoLoansPlatformTests.PageObjects
                 // Check for failed assertion
                 string assertion = TestMethods.CatchFailedAssertion(sectionItem, sectionItemName);
 
-                // Add failed assertion to list
-                if (assertion != null) failedAssertions.Add(assertion);
+                // If there is any failed assertion add it to the list and reload the page to continue whith the next element
+                if (assertion != null)
+                {
+                    // Add it to list
+                    failedAssertions.Add(assertion);
+                    // Logout if page opens with ERROR: 500
+                    if (BaseTest.driver.PageSource.Contains("Error: 500")) LoginPage.LogOut();
+                    // Login to the page
+                    LoginPage.SignIn();
+                    // Open "Settingss" page
+                    Helper.OpenPage(settingsPageUrl);
+                    // Move to the next element
+                    continue;
+                }
 
                 // Return to the "Settings" page
                 BaseTest.driver.Navigate().Back();

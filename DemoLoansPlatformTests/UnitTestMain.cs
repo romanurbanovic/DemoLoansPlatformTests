@@ -4,6 +4,7 @@ using OpenQA.Selenium;
 using System;
 using DemoLoansPlatformTests.PageObjects;
 using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 
 namespace DemoLoansPlatformTests
 {
@@ -13,20 +14,20 @@ namespace DemoLoansPlatformTests
     {
         public static IWebDriver driver;
 
+        public static string loginDataFileLocation;
+        public static string mainPageUrl;
+
         [OneTimeSetUp]
-        public void BeforeAllTests()
+        public  void BeforeAllTests()
         {
-            // Launch ChromeDriver  
-            driver = new ChromeDriver(Helper.chromeDriverLocation);
+            // Set ChromeDriver options and initialize WebDriver
+            ChromeOptions options = new ChromeOptions();
 
-            // Maximize browser window
-            driver.Manage().Window.Maximize();
+            // Maximize the browser window
+            options.AddArgument("--start-maximized");
 
-            // Wait for window to maximize
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(2);
-
-            // Go to the login page
-            driver.Navigate().GoToUrl(Helper.mainPageUrl);
+            // Create ChromeDriver instance
+            driver = new ChromeDriver(Helper.chromeDriverLocation, options);
         }
 
         [OneTimeTearDown]
@@ -38,34 +39,41 @@ namespace DemoLoansPlatformTests
         [SetUp]
         public void BeforeEachTest()
         {
-            // Create LoginPageOject object
-            var loginPage = new LoginPageOject(driver);
+            // Create a configuration builder and add configuration source
+            IConfiguration configuration = new ConfigurationBuilder()
+               .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+               .Build();
+
+            //Retrieve configuration values using the IConfiguration interface
+            mainPageUrl = configuration["MainPageUrl"];
+            loginDataFileLocation = configuration["LoginDataFileLocation"];
+
+            // Go to the login page
+            driver.Navigate().GoToUrl(mainPageUrl);
 
             // Login to application
-            loginPage.SignIn();
+            LoginPage.SignIn();
 
             // Check current user is logged to the app
-            string actualUserName = driver.FindElement(DashboardPageObject.loggedUserName).Text;
-            Assert.AreEqual(LoginPageOject.expectedUserName, actualUserName);
+            string actualUserName = driver.FindElement(LoginPage.loggedUserName).Text;
+            Assert.AreEqual(LoginPage.expectedUserName, actualUserName);
         }
 
         [TearDown]
         public void AfterEachTest()
         {
-            // Create LoginPageOject object
-            var loginPage = new LoginPageOject(driver);
-
-            loginPage.LogOut();
+            // Logout from app
+            LoginPage.LogOut();
         }
     }
 
     public class Tests : BaseTest
-    {
+    {        
         [Test]
         public void DashboardPageLoanOriginationSectionWindowsOpeningTest()
         {
             // Create DashboardPageObject object
-            var dashboardObject = new DashboardPageObject(driver);
+            var dashboardObject = new DashboardPage(driver);
 
             // Check "Loan Origination" section each window opens correctly
             List<string> failedAssertions = dashboardObject.LoanOriginationSectionTabsOpening();
@@ -82,7 +90,7 @@ namespace DemoLoansPlatformTests
         public void DashboardPageLoanServicingSectionWindowsOpeningTest()
         {
             // Create DashboardPageObject object
-            var dashboardObject = new DashboardPageObject(driver);
+            var dashboardObject = new DashboardPage(driver);
 
             // Check "Loan Servicing" section each window opens correctly
             List<string> failedAssertions = dashboardObject.LoanServicingSectionTabsOpening();
@@ -98,10 +106,11 @@ namespace DemoLoansPlatformTests
         [Test]
         public void SideBarMenuElementsOpeningTest()
         {
-            // Create DashboardPageObject object
-            var sideMenu = new DashboardPageObject(driver);
 
-            // Check the openeing of sidebar menu elements
+            // Create SidebarMenu object
+                var sideMenu = new SidebarMenu(driver);
+
+            // Check the opening of sidebar menu elements
             List<string> failedAssertions = sideMenu.SidebarMenuElementsOpening();
 
             // Check if there are any failed assertions
@@ -116,7 +125,7 @@ namespace DemoLoansPlatformTests
         public void SideBarMenuElementsToggleCollapseTest()
         {
             // Create DashboardPageObject object
-            var sideMenu = new DashboardPageObject(driver);
+            var sideMenu = new SidebarMenu(driver);
 
             // Use multiple asserts to run the whole test if some assertion fails
             Assert.Multiple(() =>
@@ -125,13 +134,13 @@ namespace DemoLoansPlatformTests
                 sideMenu.SidebarMenuToggle();
 
                 // Assertion to check sidebar menu is expanded
-                Assert.IsTrue(DashboardPageObject.isExpanded, "\"Sidebar menu\" should be expanded after clicking toggle button");
+                Assert.IsTrue(SidebarMenu.isExpanded, "\"Sidebar menu\" should be expanded after clicking toggle button");
 
                 // Check sidebar menu collapse
                 sideMenu.SidebarMenuCollapse();
 
                 // Assertion to check sidebar menu is collapsed
-                Assert.IsTrue(DashboardPageObject.isCollapsed, "\"Sidebar menu\" should be collapsed after clicking collapse button");
+                Assert.IsTrue(SidebarMenu.isCollapsed, "\"Sidebar menu\" should be collapsed after clicking collapse button");
             });
         }
 
@@ -139,10 +148,10 @@ namespace DemoLoansPlatformTests
         public void SettingsPageOriginationSectionItemsOpeneingTest()
         {
             // Open "Settings" page
-            Helper.OpenPage(SettingsPageObject.settingsPageUrl);
+            Helper.OpenPage(SettingsPage.settingsPageUrl);
 
             // Check "Settings" page "Origination" section items openeing
-            List<string> failedAssertions = SettingsPageObject.settingsPageOriginationSectionItemsOpening();
+            List<string> failedAssertions = SettingsPage.settingsPageOriginationSectionItemsOpening();
 
             // Check if there are any failed assertions
             if (failedAssertions.Count > 0)
@@ -156,10 +165,10 @@ namespace DemoLoansPlatformTests
         public void SettingsPageServicingSectionItemsOpeneingTest()
         {
             // Open "Settings" page
-            Helper.OpenPage(SettingsPageObject.settingsPageUrl);
+            Helper.OpenPage(SettingsPage.settingsPageUrl);
 
             // Check "Setttings" page "Servicing" section items openeing
-            List<string> failedAssertions = SettingsPageObject.settingsPageServicingSectionItemsOpening();
+            List<string> failedAssertions = SettingsPage.settingsPageServicingSectionItemsOpening();
 
             // Check if there are any failed assertions
             if (failedAssertions.Count > 0)
@@ -173,10 +182,10 @@ namespace DemoLoansPlatformTests
         public void SettingsPageCompaniesSectionItemsOpeneingTest()
         {
             // Open "Settings" page
-            Helper.OpenPage(SettingsPageObject.settingsPageUrl);
+            Helper.OpenPage(SettingsPage.settingsPageUrl);
 
             // Check "Setttings" page "Companies" section items openeing
-            List<string> failedAssertions = SettingsPageObject.settingPageCompaniesSectionItemsOpening();
+            List<string> failedAssertions = SettingsPage.settingPageCompaniesSectionItemsOpening();
 
             // Check if there are any failed assertions
             if (failedAssertions.Count > 0)
@@ -190,10 +199,10 @@ namespace DemoLoansPlatformTests
         public void SettingsPageLogsAuditSectionItemsOpeneingTest()
         {
             // Open "Settings" page
-            Helper.OpenPage(SettingsPageObject.settingsPageUrl);
+            Helper.OpenPage(SettingsPage.settingsPageUrl);
 
             // Check "Setttings" page "Logs/Audit" section items openeing
-            List<string> failedAssertions = SettingsPageObject.settingPageLogsAuditSectionItemsOpening();
+            List<string> failedAssertions = SettingsPage.settingPageLogsAuditSectionItemsOpening();
 
             // Check if there are any failed assertions
             if (failedAssertions.Count > 0)
@@ -207,10 +216,10 @@ namespace DemoLoansPlatformTests
         public void SettingsPageUsersSectionItemsOpeneingTest()
         {
             // Open "Settings" page
-            Helper.OpenPage(SettingsPageObject.settingsPageUrl);
+            Helper.OpenPage(SettingsPage.settingsPageUrl);
 
             // Check "Setttings" page "Users" section items openeing
-            List<string> failedAssertions = SettingsPageObject.settingsPageUsersSectionItemsOpening();
+            List<string> failedAssertions = SettingsPage.settingsPageUsersSectionItemsOpening();
 
             // Check if there are any failed assertions
             if (failedAssertions.Count > 0)
@@ -224,10 +233,10 @@ namespace DemoLoansPlatformTests
         public void SettingsPageTemplatesSectionItemsOpeneingTest()
         {
             // Open "Settings" page
-            Helper.OpenPage(SettingsPageObject.settingsPageUrl);
+            Helper.OpenPage(SettingsPage.settingsPageUrl);
 
             // Check "Setttings" page "Templates" section items openeing
-            List<string> failedAssertions = SettingsPageObject.settingsPageTemplatesSectionItemsOpening();
+            List<string> failedAssertions = SettingsPage.settingsPageTemplatesSectionItemsOpening();
 
             // Check if there are any failed assertions
             if (failedAssertions.Count > 0)

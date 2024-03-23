@@ -3,26 +3,20 @@ using System.Collections.Generic;
 
 namespace DemoLoansPlatformTests.PageObjects
 {
-    public class DashboardPageObject
+    public class DashboardPage
     {
         private IWebDriver driver;
 
         private static readonly By _loanWindowTitleName = By.CssSelector("div[title = 'Title']");
         private static readonly By _sidebarMenuDashboardTab = By.CssSelector("a[href='/lms/'] i");
         private static readonly By _loanServicingTab = By.XPath("//a[contains(text(), 'Loan Servicing')]");
-        private static readonly By _elementOfExpandedSidebarMenu = By.XPath("//span[contains(text(), 'Dashboard')]");
-        private static readonly By _sideBarToggleCollapseButton = By.ClassName("slider");
-        public static readonly By settingsButton = By.CssSelector("#Settings");
-        public static readonly By loggedUserName = By.CssSelector("#user_profile");
-        public static bool isCollapsed;
-        public static bool isExpanded;
 
-        public DashboardPageObject(IWebDriver driver)
+        public DashboardPage(IWebDriver driver)
         {
             this.driver = driver;
         }
 
-// "Dashboard page" "Loan Origination" section tabs opening method
+        // "Dashboard" page "Loan Origination" section tabs opening method
         public List<string> LoanOriginationSectionTabsOpening()
         {
             // Open "Dashboard" page
@@ -43,8 +37,18 @@ namespace DemoLoansPlatformTests.PageObjects
                 // Open tab and check it opens correctly
                 string assertion = TestMethods.CatchFailedAssertion(loanOriginationSectionElement, loanOriginationSectionElementName);
 
-                // If there is any failed assertion add it to the list
-                if (assertion != null) failedAssertions.Add(assertion);
+                // If there is any failed assertion add it to the list and reload the page to continue whith the next element
+                if (assertion != null)
+                {
+                    // Add it to list
+                    failedAssertions.Add(assertion);
+                    // Logout if page opens with ERROR: 500
+                    if (BaseTest.driver.PageSource.Contains("Error: 500")) LoginPage.LogOut();
+                    // Login to the page
+                    LoginPage.SignIn();
+                    // Move to the next element
+                    continue;
+                }
 
                 // Return to the "Loan Origination" section
                 driver.Navigate().Back();
@@ -54,7 +58,7 @@ namespace DemoLoansPlatformTests.PageObjects
             return failedAssertions;
         }
 
-// Dashboard page Loan Servicing section windows opening method
+        // "Dashboard" page "Loan Servicing" section windows opening method
         public List<string> LoanServicingSectionTabsOpening()
         {
             // Open "Dashboard" section
@@ -81,8 +85,23 @@ namespace DemoLoansPlatformTests.PageObjects
                 // Open tab and check it opens correctly
                 string assertion = TestMethods.CatchFailedAssertion(element, _loanWindowTitleName);
 
-                // If there is any failed assertion add it to the list
-                if (assertion != null) failedAssertions.Add(assertion);
+                // If there is any failed assertion add it to the list and prepare to check next element
+                if (assertion != null) 
+                {
+                    // Add to list
+                    failedAssertions.Add(assertion);
+                    // Logout if page opens with ERROR: 500
+                    if (BaseTest.driver.PageSource.Contains("Error: 500")) LoginPage.LogOut();
+                    // Login to the page
+                    LoginPage.SignIn();
+                    // Wait for the element to be active
+                    WaitUntil.WaitElementIsActive(driver, _loanServicingTab);
+                    // Click it
+                    driver.FindElement(_loanServicingTab).Click();
+                    // Move to the next element
+                    continue;
+                }
+
 
                 // Return to the "Loan Servicing" section
                 driver.Navigate().Back();
@@ -90,55 +109,6 @@ namespace DemoLoansPlatformTests.PageObjects
 
             //Return failed assertion list
             return failedAssertions;
-        }
-
-// Sidebar menu elements opening method
-        public List<string> SidebarMenuElementsOpening()
-        {
-            // Create list for failed assertions
-            List<string> failedAssertions = new List<string>();
-
-            // Iterating through "Sidebar menu"
-            for (int i = 1; i < 13; i++)
-            {
-                // Locator for "Sidebar menu" element
-                By _sidebarMenuElementname = By.XPath("//ul[@class='nav-links']/li[" + i + "]/ a/i");
-
-                // Locate "Sidebar menu" element
-                IWebElement element = driver.FindElement(By.XPath("//ul[@class='nav-links']/li[" + i + "]/ a/i/following-sibling::span"));
-
-                // Open tab and check it opens correctly
-                string assertion = TestMethods.CatchFailedAssertion(element, _sidebarMenuElementname);
-
-                // If there is any failed assertion add it to the list
-                if (assertion != null) failedAssertions.Add(assertion);
-            }
-
-            //Return failed assertion list
-            return failedAssertions;
-        }
-
-// Sidebar menu Toggle method
-        public void SidebarMenuToggle()
-        {
-            // Click sidebar Toggle/Collapse button to toggle menu
-            driver.FindElement(_sideBarToggleCollapseButton).Click();
-
-            // Check if the sidebar menu is expanded by verifying visibility of "Dashboard" word in menu
-            isExpanded = driver.FindElement(_elementOfExpandedSidebarMenu).Displayed;
-        }
-
-// Sidebar menu Collapse method
-        public void SidebarMenuCollapse()
-        {
-            // Click sidebar Toggle/Collapse button to collapse menu
-            driver.FindElement(_sideBarToggleCollapseButton).Click();
-
-            // Wait for the sidebar menu to become collapsed
-            WaitUntil.WaitElementIsInvisible(driver, _elementOfExpandedSidebarMenu);
-
-            // Check if the sidebar menu is collapsed
-            isCollapsed = !driver.FindElement(_elementOfExpandedSidebarMenu).Displayed;
         }
     }
 }

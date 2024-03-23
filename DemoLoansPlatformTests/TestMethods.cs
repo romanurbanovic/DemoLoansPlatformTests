@@ -29,7 +29,7 @@ namespace DemoLoansPlatformTests
                 // Wait until the page loads completely
                 WaitUntil.WaitToLoadPage(BaseTest.driver);
 
-                // Check the correct opening of the page
+                // Check the page opens correctly
                 if (!BaseTest.driver.PageSource.Contains("Demo User300") || BaseTest.driver.PageSource.Contains("Error: 500"))
                 {
                     // Save assertion with current element name if page don't opens correctly
