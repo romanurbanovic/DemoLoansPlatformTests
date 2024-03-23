@@ -3,7 +3,7 @@ using System;
 
 namespace DemoLoansPlatformTests
 {
-    // Class for common test methods in project
+    // Class for common test methods in the project
     public class TestMethods
     {
         // Method to check failed assertions
